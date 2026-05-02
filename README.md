@@ -2,7 +2,7 @@
 
 A unified geometric framework showing how one structure — the infinite hierarchical tree — underlies numbers, computation, physics, and meaning.
 
-**[Read the full document →](https://github.com/YOUR_USERNAME/hierarchical-universe)**
+**[Read the full document →](https://rwnq8.github.io/hierarchical-universe/)**
 
 ## About
 
@@ -15,18 +15,6 @@ This repository hosts the interactive web version of *The Hierarchical Universe*
 - Proposes a **grand correspondence** — a precise dictionary translating between arithmetic, computation, physics, and semiotics
 - Provides a blueprint for constructing hierarchical quantum computers with passive error immunity
 
-## Local Development
-
-To run locally:
-
-```bash
-python -m http.server 8000
-# or
-npx http-server
-```
-
-Then open `http://localhost:8000` in your browser.
-
 ## License
 
-This work is dedicated to the public domain. See [LICENSE](LICENSE) for details.
+This work is dedicated to the public domain.

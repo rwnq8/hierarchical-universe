@@ -4,47 +4,26 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>The Hierarchical Universe</title>
-  <meta name="description" content="How one geometric structure unifies numbers, computation, physics, and meaning — and how to build machines that live within it.">
   
-  <!-- MathJax -->
+  <!-- MathJax 3: load first, before any rendering -->
   <script>
     MathJax = {
       tex: {
-        inlineMath: [['$', '$'], ['\\(', '\\)']],
-        displayMath: [['$$', '$$'], ['\\[', '\\]']],
-        processEscapes: true,
-        tags: 'none'
+        inlineMath: [['$', '$']],
+        displayMath: [['$$', '$$']],
+        processEscapes: false
       },
-      options: {
-        ignoreHtmlClass: 'no-math',
-        processHtmlClass: 'math',
-        renderActions: {
-          find: [10, function (doc) {
-            for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
-              const display = !!node.type.match(/; *mode=display/);
-              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
-              const text = document.createTextNode('');
-              node.parentNode.replaceChild(text, node);
-              math.start = {node: text, delim: '', n: 0};
-              math.end = {node: text, delim: '', n: 0};
-              doc.math.push(math);
-            }
-          }, '']
-        }
-      },
-      chtml: {
-        scale: 1,
-        minScale: 0.5
+      startup: {
+        typeset: false   // we call typesetPromise manually after markdown is rendered
       }
     };
   </script>
-  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
   
-  <!-- Marked.js for markdown parsing -->
+  <!-- marked.js for markdown -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  
+
   <style>
-    /* ===== CSS Variables ===== */
     :root {
       --bg: #0d1117;
       --bg-secondary: #161b22;
@@ -65,8 +44,6 @@
       --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
       --font-mono: 'SF Mono', 'Fira Code', 'Fira Mono', 'Roboto Mono', monospace;
     }
-
-    /* ===== Reset & Base ===== */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; }
     body {
@@ -76,104 +53,42 @@
       font-size: 17px;
       line-height: 1.75;
       -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
     }
-
-    /* ===== Layout ===== */
     #app { display: flex; min-height: 100vh; }
-    
-    /* Sidebar */
     #sidebar {
-      width: var(--toc-width);
-      min-width: var(--toc-width);
-      background: var(--bg-secondary);
-      border-right: 1px solid var(--border);
-      position: fixed;
-      top: 0;
-      left: 0;
-      bottom: 0;
-      overflow-y: auto;
-      z-index: 100;
-      padding: 24px 20px 40px;
-      transition: transform 0.3s ease;
+      width: var(--toc-width); min-width: var(--toc-width);
+      background: var(--bg-secondary); border-right: 1px solid var(--border);
+      position: fixed; top: 0; left: 0; bottom: 0; overflow-y: auto; z-index: 100;
+      padding: 24px 20px 40px; transition: transform 0.3s ease;
     }
     #sidebar-header {
-      font-family: var(--font-sans);
-      font-size: 14px;
-      font-weight: 700;
-      color: var(--accent);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin-bottom: 20px;
-      padding-bottom: 12px;
-      border-bottom: 1px solid var(--border);
+      font-family: var(--font-sans); font-size: 14px; font-weight: 700;
+      color: var(--accent); text-transform: uppercase; letter-spacing: 0.05em;
+      margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid var(--border);
     }
     #sidebar nav { font-family: var(--font-sans); font-size: 13px; }
     #sidebar nav a {
-      display: block;
-      color: var(--text-secondary);
-      text-decoration: none;
-      padding: 4px 0;
-      transition: color 0.15s;
-      line-height: 1.5;
+      display: block; color: var(--text-secondary); text-decoration: none;
+      padding: 4px 0; transition: color 0.15s; line-height: 1.5;
     }
     #sidebar nav a:hover { color: var(--link-hover); }
     #sidebar nav a.active { color: var(--accent); font-weight: 600; }
     #sidebar nav a.toc-part {
-      font-weight: 700;
-      color: var(--text-heading);
-      margin-top: 12px;
-      font-size: 12px;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
+      font-weight: 700; color: var(--text-heading); margin-top: 12px;
+      font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em;
     }
-    #sidebar nav a.toc-section {
-      padding-left: 12px;
-      font-size: 12px;
-    }
-
-    /* Mobile toggle */
+    #sidebar nav a.toc-section { padding-left: 12px; font-size: 12px; }
     #sidebar-toggle {
-      display: none;
-      position: fixed;
-      top: 12px;
-      left: 12px;
-      z-index: 200;
-      background: var(--bg-tertiary);
-      border: 1px solid var(--border);
-      color: var(--text);
-      font-size: 24px;
-      width: 42px;
-      height: 42px;
-      border-radius: 8px;
-      cursor: pointer;
-      align-items: center;
-      justify-content: center;
+      display: none; position: fixed; top: 12px; left: 12px; z-index: 200;
+      background: var(--bg-tertiary); border: 1px solid var(--border); color: var(--text);
+      font-size: 24px; width: 42px; height: 42px; border-radius: 8px; cursor: pointer;
+      align-items: center; justify-content: center;
     }
-    #overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.5);
-      z-index: 99;
-    }
-
-    /* Main content */
-    #main {
-      margin-left: var(--toc-width);
-      flex: 1;
-      max-width: var(--content-max-width);
-      padding: 48px 48px 80px;
-      width: 100%;
-    }
-
-    /* ===== Typography ===== */
+    #overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 99; }
+    #main { margin-left: var(--toc-width); flex: 1; max-width: var(--content-max-width); padding: 48px 48px 80px; width: 100%; }
     h1, h2, h3, h4, h5, h6 {
-      font-family: var(--font-sans);
-      color: var(--text-heading);
-      line-height: 1.3;
-      margin-top: 2em;
-      margin-bottom: 0.6em;
+      font-family: var(--font-sans); color: var(--text-heading);
+      line-height: 1.3; margin-top: 2em; margin-bottom: 0.6em;
     }
     h1 { font-size: 2.2em; font-weight: 800; letter-spacing: -0.02em; margin-top: 0; }
     h2 { font-size: 1.6em; font-weight: 700; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
@@ -181,154 +96,43 @@
     p { margin-bottom: 1.2em; }
     strong { color: var(--text-heading); }
     em { color: var(--accent-secondary); font-style: italic; }
-    
     a { color: var(--link); text-decoration: none; }
     a:hover { color: var(--link-hover); text-decoration: underline; }
-
-    /* ===== Code ===== */
-    code {
-      font-family: var(--font-mono);
-      font-size: 0.88em;
-      background: var(--code-bg);
-      padding: 2px 6px;
-      border-radius: 4px;
-    }
-    pre {
-      background: var(--code-bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 16px 20px;
-      overflow-x: auto;
-      margin: 1.2em 0;
-      line-height: 1.5;
-    }
-    pre code {
-      background: none;
-      padding: 0;
-      font-size: 0.85em;
-    }
-
-    /* ===== Tables ===== */
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 1.5em 0;
-      font-size: 0.92em;
-      font-family: var(--font-sans);
-    }
-    th, td {
-      padding: 10px 14px;
-      border: 1px solid var(--border);
-      text-align: left;
-    }
-    th {
-      background: var(--bg-tertiary);
-      font-weight: 700;
-      color: var(--text-heading);
-    }
+    code { font-family: var(--font-mono); font-size: 0.88em; background: var(--code-bg); padding: 2px 6px; border-radius: 4px; }
+    pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; overflow-x: auto; margin: 1.2em 0; line-height: 1.5; }
+    pre code { background: none; padding: 0; font-size: 0.85em; }
+    table { width: 100%; border-collapse: collapse; margin: 1.5em 0; font-size: 0.92em; font-family: var(--font-sans); }
+    th, td { padding: 10px 14px; border: 1px solid var(--border); text-align: left; }
+    th { background: var(--bg-tertiary); font-weight: 700; color: var(--text-heading); }
     tr:nth-child(even) td { background: var(--table-stripe); }
-
-    /* ===== Blockquote ===== */
     blockquote {
-      border-left: 3px solid var(--accent);
-      margin: 1.2em 0;
-      padding: 8px 20px;
-      color: var(--text-secondary);
-      background: var(--bg-secondary);
-      border-radius: 0 8px 8px 0;
+      border-left: 3px solid var(--accent); margin: 1.2em 0; padding: 8px 20px;
+      color: var(--text-secondary); background: var(--bg-secondary); border-radius: 0 8px 8px 0;
     }
-
-    /* ===== Horizontal Rule ===== */
-    hr {
-      border: none;
-      border-top: 1px solid var(--border);
-      margin: 2.5em 0;
-    }
-
-    /* ===== Lists ===== */
+    hr { border: none; border-top: 1px solid var(--border); margin: 2.5em 0; }
     ul, ol { margin: 0.8em 0 1.2em 1.5em; }
     li { margin-bottom: 0.3em; }
-
-    /* ===== Math ===== */
     mjx-container { overflow-x: auto; overflow-y: hidden; }
-    .MathJax { font-size: 1.02em !important; }
-
-    /* ===== Callouts ===== */
-    .callout {
-      background: var(--bg-secondary);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 16px 20px;
-      margin: 1.5em 0;
-    }
-    .callout-title {
-      font-family: var(--font-sans);
-      font-weight: 700;
-      font-size: 0.9em;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      margin-bottom: 8px;
-    }
-
-    /* ===== Footer ===== */
-    #footer {
-      margin-top: 60px;
-      padding-top: 24px;
-      border-top: 1px solid var(--border);
-      font-family: var(--font-sans);
-      font-size: 13px;
-      color: var(--text-secondary);
-    }
-
-    /* ===== Loading ===== */
+    #footer { margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--border); font-family: var(--font-sans); font-size: 13px; color: var(--text-secondary); }
     #loading {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 60vh;
-      font-family: var(--font-sans);
-      color: var(--text-secondary);
-      font-size: 1.1em;
+      display: flex; align-items: center; justify-content: center; height: 60vh;
+      font-family: var(--font-sans); color: var(--text-secondary); font-size: 1.1em;
     }
     #loading::after {
-      content: '';
-      width: 24px;
-      height: 24px;
-      border: 2px solid var(--border);
-      border-top-color: var(--accent);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-      margin-left: 16px;
+      content: ''; width: 24px; height: 24px; border: 2px solid var(--border);
+      border-top-color: var(--accent); border-radius: 50%;
+      animation: spin 0.8s linear infinite; margin-left: 16px;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* ===== Error ===== */
-    #error {
-      display: none;
-      text-align: center;
-      padding: 80px 20px;
-      font-family: var(--font-sans);
-      color: var(--text-secondary);
-    }
-
-    /* ===== Responsive ===== */
+    #error { display: none; text-align: center; padding: 80px 20px; font-family: var(--font-sans); color: var(--text-secondary); }
     @media (max-width: 900px) {
       #sidebar-toggle { display: flex; }
-      #sidebar {
-        transform: translateX(-100%);
-        box-shadow: 4px 0 24px rgba(0,0,0,0.4);
-      }
+      #sidebar { transform: translateX(-100%); box-shadow: 4px 0 24px rgba(0,0,0,0.4); }
       #sidebar.open { transform: translateX(0); }
       #overlay.open { display: block; }
-      #main {
-        margin-left: 0;
-        padding: 60px 20px 40px;
-      }
-      h1 { font-size: 1.6em; }
-      h2 { font-size: 1.3em; }
-      h3 { font-size: 1.1em; }
-      table { font-size: 0.78em; }
-      th, td { padding: 6px 8px; }
+      #main { margin-left: 0; padding: 60px 20px 40px; }
+      h1 { font-size: 1.6em; } h2 { font-size: 1.3em; } h3 { font-size: 1.1em; }
+      table { font-size: 0.78em; } th, td { padding: 6px 8px; }
     }
   </style>
 </head>
@@ -342,8 +146,8 @@
       <nav id="toc"></nav>
     </aside>
     <main id="main">
-      <div id="loading">Loading document</div>
-      <div id="error">Failed to load document. Please ensure <code>content.md</code> is in the same directory.</div>
+      <div id="loading">Rendering document</div>
+      <div id="error" style="display:none;"></div>
       <div id="content" style="display:none;"></div>
       <div id="footer">
         <p>The Hierarchical Universe — A self-contained geometric framework. Dedicated to the public domain.</p>
@@ -352,7 +156,7 @@
   </div>
 
   <script>
-    // ===== Sidebar Toggle =====
+    // Sidebar
     function toggleSidebar() {
       document.getElementById('sidebar').classList.toggle('open');
       document.getElementById('overlay').classList.toggle('open');
@@ -362,105 +166,94 @@
       document.getElementById('overlay').classList.remove('open');
     }
 
-    // ===== Markdown Rendering =====
-    async function loadDocument() {
-      const loading = document.getElementById('loading');
-      const error = document.getElementById('error');
-      const content = document.getElementById('content');
-      
-      try {
-        const response = await fetch('content.md');
-        if (!response.ok) throw new Error('Failed to fetch content.md');
-        let markdown = await response.text();
-        
-        // Configure marked
-        marked.setOptions({
-          gfm: true,
-          breaks: false,
-          headerIds: true,
-          mangle: false
-        });
-        
-        // Render markdown to HTML
-        let html = marked.parse(markdown);
-        
-        // Insert content
-        content.innerHTML = html;
-        content.style.display = 'block';
-        loading.style.display = 'none';
-        
-        // Generate TOC
-        buildTOC(content);
-        
-        // Activate MathJax
-        if (window.MathJax) {
-          await MathJax.typesetPromise([content]);
-        }
-        
-        // Highlight current section on scroll
-        setupScrollSpy();
-        
-      } catch (err) {
-        loading.style.display = 'none';
-        error.style.display = 'block';
-        console.error('Failed to load document:', err);
-      }
-    }
-
-    // ===== Table of Contents =====
+    // Table of Contents
     function buildTOC(container) {
-      const toc = document.getElementById('toc');
-      const headings = container.querySelectorAll('h2, h3');
-      const fragment = document.createDocumentFragment();
-      
-      headings.forEach((heading, idx) => {
+      var toc = document.getElementById('toc');
+      var headings = container.querySelectorAll('h2, h3');
+      headings.forEach(function(heading, idx) {
         if (!heading.id) heading.id = 'heading-' + idx;
-        
-        const a = document.createElement('a');
+        var a = document.createElement('a');
         a.href = '#' + heading.id;
         a.textContent = heading.textContent;
         a.onclick = function(e) {
-          e.preventDefault();
-          closeSidebar();
+          e.preventDefault(); closeSidebar();
           document.getElementById(heading.id).scrollIntoView({ behavior: 'smooth' });
           history.pushState(null, null, '#' + heading.id);
         };
-        
-        if (heading.tagName === 'H2') {
-          a.className = 'toc-part';
-        } else {
-          a.className = 'toc-section';
-        }
-        
-        fragment.appendChild(a);
+        a.className = (heading.tagName === 'H2') ? 'toc-part' : 'toc-section';
+        toc.appendChild(a);
       });
-      
-      toc.appendChild(fragment);
     }
 
-    // ===== Scroll Spy =====
+    // Scroll spy
     function setupScrollSpy() {
-      const headings = document.querySelectorAll('#content h2, #content h3');
-      const links = document.querySelectorAll('#toc a');
-      
-      if (headings.length === 0 || links.length === 0) return;
-      
-      const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
+      var headings = document.querySelectorAll('#content h2, #content h3');
+      var links = document.querySelectorAll('#toc a');
+      if (!headings.length || !links.length) return;
+      var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
           if (entry.isIntersecting) {
-            links.forEach(link => link.classList.remove('active'));
-            const id = entry.target.id;
-            const activeLink = document.querySelector(`#toc a[href="#${id}"]`);
-            if (activeLink) activeLink.classList.add('active');
+            links.forEach(function(l) { l.classList.remove('active'); });
+            var a = document.querySelector('#toc a[href="#' + entry.target.id + '"]');
+            if (a) a.classList.add('active');
           }
         });
       }, { rootMargin: '-80px 0px -70% 0px' });
-      
-      headings.forEach(h => observer.observe(h));
+      headings.forEach(function(h) { observer.observe(h); });
     }
 
-    // ===== Start =====
-    document.addEventListener('DOMContentLoaded', loadDocument);
+    // --- Main ---
+    (function() {
+      var contentDiv = document.getElementById('content');
+      var loadingDiv = document.getElementById('loading');
+      var errorDiv   = document.getElementById('error');
+
+      // 1) Fetch markdown, render to HTML
+      function showError(msg) {
+        loadingDiv.style.display = 'none';
+        errorDiv.style.display = 'block';
+        errorDiv.textContent = msg;
+      }
+
+      function renderAfterMathJax() {
+        // Wait until MathJax is truly ready
+        if (window.MathJax && MathJax.typesetPromise) {
+          MathJax.typesetPromise([contentDiv]).then(function() {
+            console.log('MathJax typesetting complete');
+          }).catch(function(err) {
+            console.error('MathJax error:', err);
+          });
+        } else {
+          // MathJax not ready yet — poll
+          setTimeout(renderAfterMathJax, 100);
+        }
+      }
+
+      fetch('content.md')
+        .then(function(resp) {
+          if (!resp.ok) throw new Error('HTTP ' + resp.status);
+          return resp.text();
+        })
+        .then(function(raw) {
+          // Configure marked
+          marked.setOptions({ gfm: true, breaks: false, headerIds: true, mangle: false });
+          var html = marked.parse(raw);
+
+          contentDiv.innerHTML = html;
+          contentDiv.style.display = 'block';
+          loadingDiv.style.display = 'none';
+
+          buildTOC(contentDiv);
+          setupScrollSpy();
+
+          // 2) Let MathJax render the math
+          renderAfterMathJax();
+        })
+        .catch(function(err) {
+          showError('Failed to load document: ' + err.message + '. Ensure content.md is in the repository.');
+          console.error(err);
+        });
+    })();
   </script>
 </body>
 </html>
